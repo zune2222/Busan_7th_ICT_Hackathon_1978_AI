@@ -2,7 +2,10 @@ import cv2
 import numpy as np
 import os
 
-yolo_path = "./yolo/"
+if __name__ == "__main__":
+    yolo_path = "./yolo/"
+else:
+    yolo_path = "./human_detection/yolo/"
 yolo_weights = yolo_path+"yolov3-spp.weights"
 yolo_cfg = yolo_path+"yolov3-spp.cfg"
 
@@ -12,9 +15,6 @@ classes = ["person"]
 layer_names = YOLO_net.getLayerNames()
 output_layers = [layer_names[i - 1] for i in YOLO_net.getUnconnectedOutLayers()]
 colors = np.random.uniform(0, 255, size=(len(classes), 3))
-
-sample_input_path = "./sample/input/"
-sample_output_path = "./sample/output/"
 
 yolo_img_small = (320,320)
 yolo_img_middle = (416,416)
@@ -32,6 +32,7 @@ def detect(frame):
     class_ids = []
     confidences = []
     boxes = []
+    centers = []
     for out in outs:
         for detection in out:
             scores = detection[5:]
@@ -41,6 +42,7 @@ def detect(frame):
 
                 center_x = int(detection[0] * width)
                 center_y = int(detection[1] * height)
+                centers.append((center_x, center_y))
                 w = int(detection[2] * width)
                 h = int(detection[3] * height)
 
@@ -52,25 +54,26 @@ def detect(frame):
 
     indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
 
+    results = []
     font = cv2.FONT_HERSHEY_PLAIN
     for i in range(len(boxes)):
         if i in indexes:
             x, y, w, h = boxes[i]
             if len(classes) > class_ids[i]:
                 label = str(classes[class_ids[i]])
+                results.append((centers[i], label))
             else:
                 continue
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
             cv2.putText(frame, label, (x, y + 30), font, 3, (0, 0, 255), 3)
 
-    cv2.imshow("result", frame)
+    return (frame,results)
 
-    return frame
-
-def detectImage(path, output_path):
+def detectImageAndShow(path, output_path):
     img = cv2.imread(path)
 
-    result_image = detect(img)
+    result_image, _ = detect(img)
+    cv2.imshow("result", result_image)
 
     if output_path is not None:
         cv2.imwrite(output_path, result_image)
@@ -78,7 +81,21 @@ def detectImage(path, output_path):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+async def detectImage(path):
+    img = cv2.imread(path)
+
+    _, results = detect(img)
+
+    return results
+
 if __name__ == "__main__":
-    for name in os.listdir("./sample/input"):
-        detectImage(sample_input_path+name,sample_output_path+name)
+
+    sample_input_path = "./sample/input/"
+    sample_output_path = "./sample/output/"
+
+    yolo_path = "./yolo"
+
+    for name in os.listdir(sample_input_path):
+        if name == ".gitkeep": continue
+        detectImageAndShow(sample_input_path+name,sample_output_path+name)
 
