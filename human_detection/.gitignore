@@ -1,0 +1,5 @@
+sample/input/*
+!sample/input/.gitkeep
+sample/output/*
+!sample/output/.gitkeep
+yolo/*.weights
