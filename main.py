@@ -15,7 +15,7 @@ async def create_upload_files(file: UploadFile = File(...)):
     saved_file_name = ''.join([currentTime, secrets.token_hex(16), file.filename])
     with open(os.path.join(UPLOAD_DIRECTORY, saved_file_name), "wb") as fp:
         fp.write(contents)
-    result = []#await HumanDetection.detectImage(os.path.join(UPLOAD_DIRECTORY,saved_file_name))
+    result = await HumanDetection.detectImage(os.path.join(UPLOAD_DIRECTORY,saved_file_name))
     os.remove(os.path.join(UPLOAD_DIRECTORY,saved_file_name))
     print(result)
     return result
